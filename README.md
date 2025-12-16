@@ -1,2 +1,2 @@
-# Interpretable Machine Learning for Host–Pathogen Interactions at Single-Cell Resolution
-An interpretable ML framework for analyzing host–pathogen interactions in parasite-inclusive single-cell RNA-seq data, linking infection burden to cell-type–specific immune responses.
+# Interpretable Ordinal Modeling of Immune Recovery Dynamics in Plasmodium falciparum Malaria Using Single-Cell Transcriptomics
+An interpretable ordinal regression framework for modeling immune recovery trajectories in Plasmodium falciparum malaria using scRNA-seq–derived immune program features, with SHAP-based interpretation, functional validation, and patient-level trajectory analysis.

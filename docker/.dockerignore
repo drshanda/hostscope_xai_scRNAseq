@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# DVC cache
+.dvc/cache
+
+# Python
+__pycache__/
+*.pyc
+
+# Results & artifacts (regenerated)
+03_results/
+mlruns/
+
+# Local junk
+.env
+.DS_Store

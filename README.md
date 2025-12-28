@@ -99,12 +99,13 @@ This separation prevents conflation of composition effects with functional immun
 
 Models trained:
 
-* **Ordinal Logistic Regression**
-
-  * Predicts ordered recovery stage: Day0 < Day7 < Day28
 * **Pairwise Logistic Regression**
-
   * Distinguishes acute infection (Day0) from recovery (Day28)
+  * Serves as a comparator for simpler recovery framing
+
+* **Ordinal Logistic Regression**
+  * Predicts ordered recovery stage: Day0 < Day7 < Day28
+  * Captures recovery as a trajectory rather than a categorical switch
 
 | Model             | Task                | Balanced Accuracy | AUC   | MAE   |
 | ----------------- | ------------------- | ----------------- | ----- | ----- |
@@ -115,7 +116,7 @@ Models trained:
 * Performance is intentionally modest but stable, reflecting true inter-patient heterogeneity.
 * Ordinal MAE ≈ 0.29 (on a 0–2 scale) indicates predictions are typically within one-third of a stage.
 * Errors are overwhelmingly adjacent-stage, with no catastrophic Day0 ↔ Day28 swaps.
-
+* All models are evaluated using leave-one-patient-out (LOPO) cross-validation.
 ---
 
 ### 4.3 Interpretability and Error Analysis
@@ -162,15 +163,6 @@ DVC is used to track and version:
 * Intermediate analysis artifacts
 
 Artifacts are remote-tracked on AWS S3.
-
-Example commands:
-
-```
-dvc init
-dvc remote add -d s3remote s3://hostscope-dvc-store
-dvc add 01_data/processed/hostscope_features.csv
-dvc push
-```
 
 ---
 
@@ -232,6 +224,7 @@ The MLflow UI enables experiment comparison and model lineage tracking.
 
   * checkpoint activity → acute-like
   * plasma biosynthesis → recovery-like
+
 * Day7 shows SHAP compression reflecting biological heterogeneity, not signal loss
 
 ### Functional Biology Results
@@ -265,30 +258,63 @@ This project is best understood not as a recovery classifier, but as a **framewo
 
 ## 9. Running the Project
 
-### Machine Learning (Python)
+Here is a **clean, accurate rewrite** of that README section using your **actual file paths, folder structure, and Docker layout**, written for clarity and skim-readability.
 
-```
-python 02_src/Python/modeling_lopo.py
-```
+You can drop this in verbatim.
 
-### Functional Enrichment (R)
+---
 
-Open:
+## 9. Running the Project
 
-```
-02_src/R/nes_analysis.R
-```
+HostScope can be run either **natively** (Python/R) or via **Docker**. Processed feature matrices are retrieved using DVC.
 
-### Docker Build
+---
 
-```
-docker build -t hostscope-ml .
-```
+### Fetch Versioned Processed Data
 
-### Fetch Versioned Data
+Processed feature matrices are versioned with DVC and stored in Amazon S3.
 
-```
+To retrieve the exact data used for the analysis:
+
+```bash
 dvc pull
 ```
 
+This restores all files in:
+
+```text
+01_data/processed/
+```
+
 ---
+
+### Docker Build (Optional)
+
+Docker configuration is located in the `docker/` directory.
+
+Build the Docker image from the repository root:
+
+```bash
+docker build -t hostscope -f docker/Dockerfile .
+```
+
+---
+
+### Run Analysis in Docker
+
+Execute the modeling script inside the container (DVC data is pulled automatically at startup):
+
+```bash
+docker run --rm \
+  -v $(pwd)/mlruns:/app/mlruns \
+  -e AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY \
+  -e AWS_DEFAULT_REGION \
+  hostscope \
+  python 02_src/Python/modeling_lopo_mlflow.py
+```
+
+MLflow runs can then be viewed locally using the MLflow UI.
+
+---
+

@@ -1,40 +1,5 @@
-# ============================================================
-# HostScope — Modeling under LOPO (Ordinal + Pairwise)
-# ============================================================
-# This script is extracted verbatim (by cell) from:
-#   LOPO_train_test_split.ipynb
-#
-# Purpose:
-#   - Run LOPO splitting
-#   - Fit pairwise logistic regression (Day0 vs Day28)
-#   - Fit ordinal logistic regression (Day0 < Day7 < Day28)
-#   - Compute and save core performance metrics/figures
-#
-# Notes:
-#   - Code is included exactly as in the notebook cells referenced.
-#   - Redundancies across scripts are intentional for reproducibility.
-# ============================================================
+#!/usr/bin/env python
 
-
-# --------------------
-# Notebook cell 1
-# --------------------
-
-# ============================================================
-# HostScope Proof-of-Concept Modeling Script (UPDATED)
-# ============================================================
-# - LOPO splitting
-# - Pairwise logistic regression (D0 vs D28)
-# - Ordinal logistic regression (D0 < D7 < D28)
-# - Metrics:
-#     * Balanced Accuracy (both)
-#     * AUC-ROC (pairwise)
-#     * MAE (ordinal)
-# - Saves:
-#     * metrics CSV
-#     * confusion matrix plots
-#     * classification reports (CSV)
-# ============================================================
 
 import os
 import numpy as np

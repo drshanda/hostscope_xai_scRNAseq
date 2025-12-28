@@ -1,21 +1,3 @@
-# ============================================================
-# HostScope — Permutation Calibration (Single Script)
-# ============================================================
-# Extracted (by cell, verbatim) from:
-#   LOPO_train_test_split.ipynb
-#
-# Purpose:
-#   - Compute observed program vs composition reliance statistic
-#   - Generate a null distribution via permutation
-#   - Compute empirical p-value for calibration (not hypothesis testing)
-#
-# Notes:
-#   - Includes modeling/setup (cell 1) and SHAP computation cells
-#     because permutation cells assume SHAP values already exist.
-#   - Cell order within each included cell is unchanged, but cells are
-#     grouped into a runnable script for reproducibility outside the notebook.
-# ============================================================
-
 import os
 import numpy as np
 import pandas as pd
@@ -137,13 +119,6 @@ def plot_confusion_matrix(
 # Ordinal Logistic Regression
 # ============================================================
 
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import LeaveOneGroupOut
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import balanced_accuracy_score, confusion_matrix, classification_report, roc_auc_score
-from sklearn.preprocessing import label_binarize
-from statsmodels.miscmodels.ordinal_model import OrderedModel
 
 def select_feature_columns(df, exclude):
     return [
@@ -167,7 +142,6 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
       - final model artifacts for SHAP (X_all in the same row order as df_work)
     """
 
-    # --- Work on a copy with a stable row_id ---
     df_work = df.copy()
     df_work = df_work.reset_index(drop=False).rename(columns={"index": "row_id"})  # stable key
     if df_work["row_id"].duplicated().any():
@@ -178,7 +152,7 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
 
     splits = lopo_splits(df_work, donor_col=donor_col)
 
-    # Collect overall (OOF)
+   
     y_true_all = []
     y_pred_all = []
     y_prob_all = []
@@ -207,7 +181,6 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
         y_pred_all.extend(y_pred.tolist())
         y_prob_all.append(probs)
 
-        # ✅ OOF rows keyed by row_id (this is the critical part)
         for rid, yt, yp in zip(test_df["row_id"].values, y_test, y_pred):
             oof_rows.append({
                 "row_id": int(rid),
@@ -224,17 +197,17 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
             "mae": float(np.mean(np.abs(y_pred - y_test))),
         })
 
-    # --- Stack overall ---
+
     y_true_all = np.asarray(y_true_all, dtype=int)
     y_pred_all = np.asarray(y_pred_all, dtype=int)
     y_prob_all = np.vstack(y_prob_all)
 
-    # --- Build OOF DF and enforce 1 row per sample ---
+
     oof_df = pd.DataFrame(oof_rows)
 
-    # HARD GUARANTEES
+
     if oof_df.shape[0] != df_work.shape[0]:
-        # This should never happen now; if it does, show diagnostics
+
         missing = set(df_work["row_id"]) - set(oof_df["row_id"])
         dupes = oof_df["row_id"][oof_df["row_id"].duplicated()].unique().tolist()
         raise ValueError(
@@ -246,7 +219,7 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
     if oof_df["row_id"].duplicated().any():
         raise ValueError("OOF row_id duplicates detected (should be impossible).")
 
-    # --- Overall metrics ---
+  
     y_true_bin = label_binarize(y_true_all, classes=[0, 1, 2])
 
     overall_metrics = {
@@ -256,7 +229,6 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
         "mae": float(np.mean(np.abs(y_pred_all - y_true_all))),
     }
 
-    # --- Final model on ALL data for SHAP (same order as df_work) ---
     scaler_final = StandardScaler()
     X_all = scaler_final.fit_transform(df_work[feature_cols].values)
     y_all = df_work["y_stage"].values.astype(int)
@@ -266,7 +238,7 @@ def run_ordinal_logistic(df, donor_col="ID", return_artifacts=False):
 
     if return_artifacts:
         return {
-            "df_work": df_work,                 # includes row_id and original columns
+            "df_work": df_work,                 
             "feature_names": feature_cols,
             "fold_metrics": fold_metrics,
             "overall_metrics": overall_metrics,
@@ -304,14 +276,12 @@ def ordinal_expected_stage(X_input):
     stages = np.arange(probs.shape[1])
     return np.dot(probs, stages)
 
-# Background: random subset
+
 rng = np.random.default_rng(0)
 background_idx = rng.choice(X.shape[0], size=min(30, X.shape[0]), replace=False)
 X_background = X[background_idx]
 
 
-
-# Explain all samples (safe at this scale)
 X_explain = X
 
 
@@ -365,9 +335,6 @@ T_real = mean_abs_shap_prog - mean_abs_shap_comp
 
 print(T_real)
 
-# --------------------
-# Notebook cell 3
-# --------------------
 
 def permute_program_indices(prog_idx, comp_idx, n_features):
     all_idx = np.arange(n_features)
@@ -380,9 +347,6 @@ def permute_program_indices(prog_idx, comp_idx, n_features):
     )
     return perm_prog
 
-# --------------------
-# Notebook cell 4
-# --------------------
 
 N_PERM = 1000
 T_perm = np.zeros(N_PERM)
@@ -399,19 +363,12 @@ for i in range(N_PERM):
 
 T_perm = np.array(T_perm)
 
-# --------------------
-# Notebook cell 5
-# --------------------
 
 p_value = (1 + np.sum(T_perm >= T_real)) / (1 + len(T_perm))
 
 print(p_value)
 
-# --------------------
-# Notebook cell 6
-# --------------------
 
-import matplotlib.pyplot as plt
 
 plt.hist(T_perm, bins=40, alpha=0.7)
 plt.axvline(T_real, color="red", linestyle="--", linewidth=2)

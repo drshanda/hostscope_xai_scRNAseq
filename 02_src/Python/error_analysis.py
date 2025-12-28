@@ -1,44 +1,8 @@
-# ============================================================
-# HostScope — Error Analysis + Mann–Whitney Statistics (Single Script)
-# ============================================================
-# Extracted (by cell, verbatim) from:
-#   LOPO_train_test_split.ipynb
-#
-# Purpose:
-#   - Categorize and summarize errors (correct / adjacent / extreme)
-#   - Generate residual/trajectory panels
-#   - Run Mann–Whitney U tests used to support ambiguity framing
-#
-# Notes:
-#   - Includes modeling/setup (cell 1) because error analysis cells
-#     depend on out-of-fold predictions/artifacts created earlier.
-# ============================================================
-
-
-# --------------------
-# Notebook cell 1
-# --------------------
-
-# ============================================================
-# HostScope Proof-of-Concept Modeling Script (UPDATED)
-# ============================================================
-# - LOPO splitting
-# - Pairwise logistic regression (D0 vs D28)
-# - Ordinal logistic regression (D0 < D7 < D28)
-# - Metrics:
-#     * Balanced Accuracy (both)
-#     * AUC-ROC (pairwise)
-#     * MAE (ordinal)
-# - Saves:
-#     * metrics CSV
-#     * confusion matrix plots
-#     * classification reports (CSV)
-# ============================================================
-
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.preprocessing import StandardScaler
@@ -52,10 +16,8 @@ from sklearn.metrics import (
 )
 
 from statsmodels.miscmodels.ordinal_model import OrderedModel
-
+from sklearn.preprocessing import label_binarize
 from scipy.stats import mannwhitneyu
-
-
 
 
 # ============================================================
@@ -153,13 +115,6 @@ def plot_confusion_matrix(
 # Ordinal Logistic Regression
 # ============================================================
 
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import LeaveOneGroupOut
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import balanced_accuracy_score, confusion_matrix, classification_report, roc_auc_score
-from sklearn.preprocessing import label_binarize
-from statsmodels.miscmodels.ordinal_model import OrderedModel
 
 def select_feature_columns(df, exclude):
     return [
@@ -340,21 +295,15 @@ merged = oof.merge(X_df, on="row_id", how="inner")
 # Compare means
 merged.groupby("error_type")[ordinal_outputs["feature_names"]].mean()
 
-# --------------------
-# Notebook cell 29
-# --------------------
 
 program_cols = feature_names
 
 summary = merged.groupby("error_type")[program_cols].mean()
 summary
 
-# --------------------
-# Notebook cell 30
-# --------------------
 
-import seaborn as sns
-import matplotlib.pyplot as plt
+
+
 
 plt.figure(figsize=(10, 4))
 sns.heatmap(
@@ -532,8 +481,7 @@ def build_df_plot(
     # --- Stage labels ---
     df["true_stage"] = df["true_stage_num"].map(stage_label_map)
 
-    # --- Merge with features ---
-# --- Merge with features ---
+
     feat = features_df.copy()
 
     if sample_id_col_feat != "row_id":
@@ -557,9 +505,6 @@ def build_df_plot(
 
     return df_plot
 
-# --------------------
-# Notebook cell 37
-# --------------------
 
 def plot_program_trajectory(
     df_plot: pd.DataFrame,
@@ -608,9 +553,6 @@ def plot_program_trajectory(
 
     ax.legend_.remove()
 
-# --------------------
-# Notebook cell 38
-# --------------------
 
 def plot_ordinal_residuals(
     df_plot: pd.DataFrame,
@@ -649,9 +591,6 @@ def plot_ordinal_residuals(
     ax.set_xlabel(f"{program_col} score")
     ax.set_ylabel("Ordinal residual")
 
-# --------------------
-# Notebook cell 39
-# --------------------
 
 def plot_program_error_panel(
     df_plot: pd.DataFrame,
@@ -703,11 +642,8 @@ def plot_program_error_panel(
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     return fig
 
-# --------------------
-# Notebook cell 40
-# --------------------
 
-import pandas as pd
+
 
 def create_predictions_df_from_oof(
     oof_predictions: pd.DataFrame,
@@ -749,10 +685,6 @@ def create_predictions_df_from_oof(
     return predictions_df
 
 
-# --------------------
-# Notebook cell 41
-# --------------------
-
 predictions_df = create_predictions_df_from_oof(
     oof_predictions=oof,
     row_id_col="row_id",
@@ -760,10 +692,6 @@ predictions_df = create_predictions_df_from_oof(
     pred_label_col="y_pred"
 )
 
-
-# --------------------
-# Notebook cell 42
-# --------------------
 
 def create_feature_df_from_csv(
     csv_path: str,
@@ -789,9 +717,6 @@ def create_feature_df_from_csv(
 
     return feature_df
 
-# --------------------
-# Notebook cell 43
-# --------------------
 
 features_df = create_feature_df_from_csv(
     csv_path="/Users/lashandawilliams/Immune_Recovery_Ordinal_Model_Malaria_scRNAseq/01_data/processed/hostscope_features_ordinal_D0_D7_D28.csv",
@@ -799,9 +724,6 @@ features_df = create_feature_df_from_csv(
     timepoint_col="timepoint"
 )
 
-# --------------------
-# Notebook cell 44
-# --------------------
 
 # Example mappings
 stage_map = {0: "Day0", 1: "Day7", 2: "Day28"}
@@ -810,7 +732,7 @@ df_plot = build_df_plot(
     predictions_df=predictions_df,
     features_df=features_df,
     sample_id_col_pred="ID",
-    sample_id_col_feat="row_id",   # 👈 important
+    sample_id_col_feat="row_id",  
     true_label_col="y_true",
     pred_label_col="y_pred",
     stage_label_map=stage_map,
@@ -827,18 +749,14 @@ fig = plot_program_error_panel(
 plt.savefig(f"{RESULTS_DIR}/figures/errors/error_panel1.png")
 plt.show()
 
-# --------------------
-# Notebook cell 45
-# --------------------
 
-# Example mappings
 stage_map = {0: "Day0", 1: "Day7", 2: "Day28"}
 
 df_plot = build_df_plot(
     predictions_df=predictions_df,
     features_df=features_df,
     sample_id_col_pred="ID",
-    sample_id_col_feat="row_id",   # 👈 important
+    sample_id_col_feat="row_id",  
     true_label_col="y_true",
     pred_label_col="y_pred",
     stage_label_map=stage_map,

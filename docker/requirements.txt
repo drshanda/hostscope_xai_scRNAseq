@@ -1,0 +1,22 @@
+# Core
+numpy
+pandas
+scikit-learn
+scipy
+
+# Modeling
+statsmodels
+
+# Interpretability
+shap
+
+# Experiment tracking
+mlflow
+
+# Data versioning + cloud
+dvc[s3]
+boto3
+
+# Plotting
+matplotlib
+seaborn
